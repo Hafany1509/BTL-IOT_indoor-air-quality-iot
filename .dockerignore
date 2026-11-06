@@ -1,0 +1,10 @@
+.git
+.env
+.env.*
+**/__pycache__
+**/.venv
+**/node_modules
+**/dist
+**/.pio
+**/secrets.h
+

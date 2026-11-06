@@ -1,0 +1,18 @@
+user iot-backend
+topic read home/+/+/telemetry
+topic read home/+/+/status
+topic read home/+/+/ack
+topic write home/+/+/command
+
+user esp32-a-01
+topic write home/room-a/esp32-a-01/telemetry
+topic write home/room-a/esp32-a-01/status
+topic write home/room-a/esp32-a-01/ack
+topic read home/room-a/esp32-a-01/command
+
+user sim-b-01
+topic write home/room-b/sim-b-01/telemetry
+topic write home/room-b/sim-b-01/status
+topic write home/room-b/sim-b-01/ack
+topic read home/room-b/sim-b-01/command
+

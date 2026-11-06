@@ -1,0 +1,8 @@
+:root { font-family: system-ui, sans-serif; color: #183038; background: #f0f5f4; }
+body { margin: 0; }
+main { max-width: 52rem; margin: 4rem auto; padding: 0 1.5rem; }
+.label { color: #006e61; font-weight: 700; }
+h1 { line-height: 1.15; }
+section { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1rem; margin: 2rem 0; }
+article { background: white; padding: 1rem 1.5rem; border: 1px solid #cbd9d6; border-radius: .5rem; }
+
