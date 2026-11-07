@@ -4,4 +4,6 @@ pydantic>=2.10,<3
 paho-mqtt==2.1.0
 SQLAlchemy>=2.0,<3
 PyMySQL[rsa]>=1.1,<2
-
+PyJWT>=2.8.0
+bcrypt>=4.0.0
+python-multipart>=0.0.9
