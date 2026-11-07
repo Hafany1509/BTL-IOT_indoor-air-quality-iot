@@ -35,6 +35,19 @@ services:
       dockerfile: backend/Dockerfile
     ports:
       - "127.0.0.1:8000:8000"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-air_quality}
+      MYSQL_USER: ${MYSQL_USER:-iot_app}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Run scripts/bootstrap.py}
+      MQTT_HOST: mosquitto
+      MQTT_BACKEND_PASSWORD: ${MQTT_BACKEND_PASSWORD:?Run scripts/bootstrap.py}
+      JWT_SECRET: ${JWT_SECRET:-iot_secret_jwt_key_2026}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
   worker:
     image: indoor-air-quality-backend:dev
     build:

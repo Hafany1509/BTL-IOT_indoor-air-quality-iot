@@ -9,6 +9,7 @@ values = {
     **{name: token_hex(24) for name in (
         "MYSQL_PASSWORD", "MYSQL_ROOT_PASSWORD",
         "MQTT_BACKEND_PASSWORD", "MQTT_ESP32_PASSWORD", "MQTT_SIM_PASSWORD",
+        "JWT_SECRET",
     )},
     "MQTT_BIND_ADDRESS": "127.0.0.1",
 }
