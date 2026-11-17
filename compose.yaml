@@ -76,6 +76,8 @@ services:
     environment:
       MQTT_HOST: mosquitto
       MQTT_SIM_PASSWORD: ${MQTT_SIM_PASSWORD:?Run scripts/bootstrap.py}
+      SIM_SCENARIO: ${SIM_SCENARIO:-normal}
+      SIM_INTERVAL_SECONDS: ${SIM_INTERVAL_SECONDS:-10}
     depends_on:
       - mosquitto
 volumes:

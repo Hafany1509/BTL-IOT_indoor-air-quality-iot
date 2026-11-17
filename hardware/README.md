@@ -1,4 +1,57 @@
-# Tài liệu phần cứng
+# Phần cứng và đấu nối
 
-Lưu BOM, sơ đồ đấu dây theo đúng module đã mua và ảnh prototype tại đây. Phạm vi: ESP32, DHT22, MQ-135, relay cách ly, quạt DC 5V, LED qua 220Ω. Kiểm tra mức AO của MQ-135 và dùng ADC1 với mạch bảo vệ phù hợp; kiểm tra ngõ kích relay ở 3,3V. Chỉ dùng tải điện áp thấp. Không chọn chân hoặc đấu nguồn theo hình minh họa khi chưa đối chiếu module thật.
+## BOM node phòng A
 
+- ESP32 DevKit V1
+- Module DHT22/AM2302 3 chân
+- Module MQ-135
+- Relay 1 kênh 5V có cách ly quang
+- Quạt DC 5V, 50mm
+- LED 5mm và điện trở 220 ohm
+- Breadboard, dây nối
+- Bổ sung nếu chưa có: điện trở 10k ohm và 20k ohm làm mạch chia áp cho AO của MQ-135
+
+## Sơ đồ kết nối dạng chữ
+
+DHT22 VCC -> ESP32 3V3
+DHT22 GND -> ESP32 GND
+DHT22 DATA -> GPIO4
+
+MQ-135 VCC -> nguồn 5V
+MQ-135 GND -> GND chung
+MQ-135 AO -> điện trở 20k -> GPIO34 (ADC1)
+GPIO34 -> điện trở 10k -> GND
+
+Relay IN -> GPIO26
+Relay VCC -> nguồn 5V theo nhãn module
+Relay GND -> GND chung theo sơ đồ module
+Nguồn 5V+ -> Relay COM
+Relay NO -> Quạt +
+Quạt - -> nguồn 5V GND
+
+GPIO25 -> điện trở 220 ohm -> LED anode
+LED cathode -> GND
+
+GPIO34 chỉ nhận tín hiệu analog. Mạch chia áp ví dụ đưa 5V xuống khoảng 1,67V; đo điện áp thực tế tại chân GPIO trước khi nối ESP32. Nếu module MQ-135 AO không vượt 3,3V trong toàn dải hoạt động thì vẫn cần xác nhận bằng đo đạc, không suy đoán từ giá trị ADC.
+
+## Lưu ý an toàn
+
+- Dùng tải DC 5V; không đấu relay vào điện lưới 220V.
+- Không cấp quạt từ GPIO. Kiểm tra dòng định mức quạt và khả năng nguồn 5V.
+- Chỉ nối GND theo sơ đồ của module relay cụ thể. Một số module có chân JD-VCC/cầu jumper; không tháo jumper hoặc cấp hai nguồn nếu chưa hiểu sơ đồ cách ly.
+- Kiểm tra nhãn VCC/GND/DATA trên module DHT22 và chân AO/DO trên MQ-135 trước khi cấp nguồn.
+- Lắp LED nối tiếp điện trở 220 ohm; không nối LED trực tiếp giữa GPIO và GND.
+- Chụp ảnh mạch prototype và cập nhật BOM/điện áp đo thực tế sau khi lắp xong.
+
+## Chân GPIO đã chọn trong firmware
+
+| Tín hiệu | GPIO |
+|---|---:|
+| DHT22 DATA | 4 |
+| MQ-135 AO | 34 |
+| Relay IN | 26 |
+| LED | 25 |
+
+## Chuẩn bị nghiệm thu
+
+Trước khi cấp nguồn, xem [kế hoạch đo và nghiệm thu](validation-plan.md). Khi bắt đầu lắp, điền [`measurement-log-template.csv`](measurement-log-template.csv) và chỉ ghi PASS khi đã có kết quả thực tế.
