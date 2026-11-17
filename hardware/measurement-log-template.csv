@@ -1,0 +1,2 @@
+date_time_local,firmware_commit,stage,condition,esp32_supply_v,mq135_supply_v,mq135_ao_v_before_divider,gpio34_v_after_divider,temperature_c,humidity_pct,mq135_adc_raw,telemetry_received,command_action,command_id,ack_result,reconnect_seconds,evidence_path,notes
+,,,,,,,,,,,,,,,,,

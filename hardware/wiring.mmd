@@ -1,0 +1,29 @@
+flowchart LR
+    esp["ESP32 DevKit V1"]
+
+    subgraph sensors["Cảm biến"]
+        dht["DHT22 module"]
+        mq["MQ-135 module<br/>AO"]
+        divider["Chia áp<br/>20kΩ nối tiếp<br/>10kΩ xuống GND"]
+    end
+
+    subgraph outputs["Ngõ ra DC 5V"]
+        relay["Relay 1 kênh<br/>cách ly quang"]
+        fan["Quạt 5V"]
+        led["LED 5mm<br/>220Ω nối tiếp"]
+    end
+
+    dht -->|"DATA → GPIO4; VCC → 3V3"| esp
+    mq -->|"AO"| divider
+    divider -->|"tối đa dưới 3,3V → GPIO34 / ADC1"| esp
+    esp -->|"GPIO26 → IN"| relay
+    esp -->|"GPIO25"| led
+    supply["Nguồn 5V phù hợp"] -->|"nguồn module"| mq
+    supply -->|"VCC module"| relay
+    supply -->|"COM → NO"| fan
+    common["GND chung cho ESP32, cảm biến và nguồn logic"] --- esp
+    common --- dht
+    common --- divider
+    common --- relay
+    common --- supply
+    isolated["Tiếp điểm relay chỉ đóng/ngắt tải DC 5V<br/>Không đấu 220V"] -.-> fan

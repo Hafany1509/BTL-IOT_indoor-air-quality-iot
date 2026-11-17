@@ -12,6 +12,7 @@ from sqlalchemy import (
     Enum,
     ForeignKey,
     Index,
+    Integer,
     SmallInteger,
     String,
     Text,
@@ -20,6 +21,11 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+
+# MySQL retains BIGINT IDs; SQLite needs the exact INTEGER PRIMARY KEY type
+# to generate autoincrement values in the in-memory test database.
+BIGINT_AUTO_INCREMENT = BigInteger().with_variant(Integer, "sqlite")
 
 
 # Enums matching database DDL
@@ -127,7 +133,7 @@ class Room(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BIGINT_AUTO_INCREMENT, primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     email: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -166,7 +172,7 @@ class Device(Base):
 class DeviceAssignment(Base):
     __tablename__ = "device_assignments"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BIGINT_AUTO_INCREMENT, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     device_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("devices.device_id", ondelete="CASCADE"), nullable=True)
     room_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("rooms.room_id", ondelete="CASCADE"), nullable=True)
@@ -204,7 +210,7 @@ class Telemetry(Base):
 class AlertRule(Base):
     __tablename__ = "alert_rules"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BIGINT_AUTO_INCREMENT, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     room_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("rooms.room_id", ondelete="CASCADE"), nullable=True)
     device_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("devices.device_id", ondelete="CASCADE"), nullable=True)
@@ -225,7 +231,7 @@ class AlertRule(Base):
 class Alert(Base):
     __tablename__ = "alerts"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BIGINT_AUTO_INCREMENT, primary_key=True, autoincrement=True)
     device_id: Mapped[str] = mapped_column(String(64), ForeignKey("devices.device_id"), nullable=False)
     rule_id: Mapped[int] = mapped_column(BigInteger, ForeignKey("alert_rules.id"), nullable=False)
     metric_value: Mapped[float] = mapped_column(Double, nullable=False)
@@ -245,7 +251,7 @@ class Alert(Base):
 class Command(Base):
     __tablename__ = "commands"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BIGINT_AUTO_INCREMENT, primary_key=True, autoincrement=True)
     command_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
     device_id: Mapped[str] = mapped_column(String(64), ForeignKey("devices.device_id"), nullable=False)
     requested_by: Mapped[int] = mapped_column(BigInteger, ForeignKey("users.id"), nullable=False)
@@ -267,7 +273,7 @@ class Command(Base):
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(BIGINT_AUTO_INCREMENT, primary_key=True, autoincrement=True)
     actor_type: Mapped[ActorType] = mapped_column(Enum(ActorType), nullable=False, default=ActorType.USER)
     actor_user_id: Mapped[Optional[int]] = mapped_column(BigInteger, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     actor_device_id: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
