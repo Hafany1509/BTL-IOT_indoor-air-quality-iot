@@ -13,7 +13,7 @@ ON DUPLICATE KEY UPDATE name = VALUES(name), description = VALUES(description);
 
 -- 2. Tài khoản mẫu cho 3 vai trò (Mật khẩu mặc định: Demo@2026!)
 INSERT INTO users (id, username, email, password_hash, full_name, role, status) VALUES
-(1, 'admin', 'admin@iot.local', '$2b$12$K1d0N4W8fV7N4zZ7Y9B3MeO5p0nL7w2bL5Q2pG8mX4yV1xZ2c9B1e', 'Quản Trị Viên Hệ Thống', 'ADMIN', 'ACTIVE'),
+(1, 'admin', 'admin@iot.local', '$2b$12$ML/rcdDu8.dODRZNBoulfeIqJKIQ1y9rQwxCqSuU7iHq/CxYAbwVe', 'Quản Trị Viên Hệ Thống', 'ADMIN', 'ACTIVE'),
 (2, 'operator_a', 'operator.a@iot.local', '$2b$12$K1d0N4W8fV7N4zZ7Y9B3MeO5p0nL7w2bL5Q2pG8mX4yV1xZ2c9B1e', 'Người Vận Hành Phòng A', 'OPERATOR', 'ACTIVE'),
 (3, 'viewer_user', 'viewer@iot.local', '$2b$12$K1d0N4W8fV7N4zZ7Y9B3MeO5p0nL7w2bL5Q2pG8mX4yV1xZ2c9B1e', 'Khách Xem Báo Cáo', 'VIEWER', 'ACTIVE')
 ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), role = VALUES(role), status = VALUES(status);
