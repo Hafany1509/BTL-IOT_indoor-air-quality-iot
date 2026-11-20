@@ -8,7 +8,7 @@ Hai phòng: phòng A dùng ESP32 thật, phòng B dùng node Python mô phỏng.
 |---|---|
 | `backend/` | FastAPI health check và worker nhận/lưu telemetry |
 | `frontend/` | React/Vite, giao diện khởi đầu và kiểm tra API |
-| `firmware/` | PlatformIO cho ESP32, chương trình kiểm tra Serial |
+| firmware/ | Mã PlatformIO ESP32 cho DHT22, MQ-135, MQTT, lệnh cơ cấu chấp hành và ACK; chưa kiểm chứng phần cứng |
 | `simulator/` | Node phòng B, telemetry, heartbeat và ACK mô phỏng |
 | `database/` | SQL khởi tạo thiết bị và bảng telemetry |
 | `deployment/` | Cấu hình broker và ACL; Compose ở thư mục gốc |
@@ -53,9 +53,9 @@ Broker mặc định chỉ publish cổng ra loopback. Khi thử ESP32 thật, c
 - Backend/test: `py -3.12 -m venv .venv`, `.\.venv\Scripts\python -m pip install -r backend/requirements-dev.txt`, rồi đặt `$env:PYTHONPATH = "backend"` và chạy `.\.venv\Scripts\python -m pytest -q` từ thư mục gốc.
 - API không cần Compose để chạy riêng: `.\.venv\Scripts\python -m uvicorn app.main:app --app-dir backend --reload`.
 - Frontend không cần phần cứng để làm giao diện. Dùng mẫu payload ở `docs/mqtt.md` làm fixture và đánh dấu dữ liệu giả.
-- Firmware: xem [hướng dẫn PlatformIO](firmware/README.md). Chưa có mã điều khiển phần cứng.
+- Firmware: xem hướng dẫn PlatformIO; mã đã được chuẩn bị nhưng chưa biên dịch/nạp lên ESP32 thật.
 
-**Đã có trong starter:** API liveness, web khởi đầu, hợp đồng telemetry, worker lưu mẫu, simulator, schema ban đầu và cấu hình broker. **Cần làm tiếp:** JWT/RBAC, dashboard dữ liệu thật, CRUD và vòng đời, ACK phía backend, cảnh báo, firmware tích hợp, migration và kiểm thử hệ thống.
+**Mã nguồn hiện có:** FastAPI auth/RBAC và API thiết bị, MySQL schema/seed, MQTT worker/cảnh báo/watchdog, simulator có kịch bản, firmware ESP32 và tài liệu thiết kế. **Cần hoàn thiện:** ghép dashboard với API, xác nhận firmware khi có linh kiện, chạy kiểm thử tích hợp/bảo mật thật, đo độ trễ và bổ sung ảnh prototype.
 
 Đọc [mục lục tài liệu](docs/README.md) để bắt đầu. Các bước đưa bộ khung lên repo nhóm nằm ở [hướng dẫn GitHub](docs/github.md).
 

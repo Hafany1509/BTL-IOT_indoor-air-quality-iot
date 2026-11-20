@@ -24,7 +24,7 @@ home/{room_id}/{device_id}/{kind}
 | `home/{room_id}/{device_id}/status` | Node → Broker → Backend | **1** | **True** | Trạng thái kết nối: `online` (khi khởi động/heartbeat) và `offline` (cấu hình MQTT LWT). |
 | `home/{room_id}/{device_id}/command` | Backend → Broker → Node | **1** | **False** | Lệnh điều khiển cơ cấu chấp hành (bật/tắt quạt 5V, LED). |
 | `home/{room_id}/{device_id}/ack` | Node → Broker → Backend | **1** | **False** | Phản hồi xác nhận thực thi lệnh kèm kết quả từ firmware. |
-| `home/{room_id}/{device_id}/config` | Backend → Broker → Node | **1** | **False** | Cấu hình tham số cục bộ từ xa (chu kỳ lấy mẫu, ngưỡng tạm thời). |
+| `home/{room_id}/{device_id}/config` | Backend → Broker → Node | **1** | **False** | Cấu hình chu kỳ lấy mẫu từ xa. |
 
 > [!IMPORTANT]
 > **Quy tắc Retain**: Chỉ duy nhất topic `status` được phép đặt cờ `Retain = True` (đặc biệt là bản tin Last Will and Testament - LWT) để các client mới kết nối ngay lập tức nắm được trạng thái online/offline hiện tại của node. Tuyệt đối **không bật Retain cho topic `command`** để tránh việc thiết bị vừa online lại tự động thực thi các lệnh cũ ngoài ý muốn.
@@ -90,19 +90,36 @@ Lệnh gửi từ Backend API tới thiết bị để điều khiển cơ cấu
 }
 ```
 * `command_id`: Mã định danh lệnh duy nhất (UUID), dùng để đối soát tính duy nhất và chống thực thi lệnh lặp (Idempotency).
-* `action`: Tên hành vi điều khiển (`FAN_SET`, `LED_SET`, `SAMPLING_INTERVAL_SET`).
-* `value`: Tham số hành vi (`"ON"`, `"OFF"` hoặc giá trị số).
+* `action`: Tên hành vi (`FAN_SET`, `LED_SET`, `SAMPLING_INTERVAL_SET`).
+* `value`: `"ON"`/`"OFF"` cho quạt và LED; số nguyên từ `2` đến `300` cho chu kỳ lấy mẫu.
+
+### 3.4. Cấu hình từ xa (`/config` hoặc `/command`)
+
+Firmware và node mô phỏng chấp nhận `SAMPLING_INTERVAL_SET` trên cả topic `/config` và `/command` để tương thích với API lệnh hiện có. Khoảng lấy mẫu được tính bằng giây, giới hạn 2–300 giây.
+
+```json
+{
+  "command_id": "cmd-interval-01",
+  "action": "SAMPLING_INTERVAL_SET",
+  "value": 15
+}
+```
+
+Node áp dụng giá trị hợp lệ và trả ACK ở `/ack`, gồm `command_id`, `action`, `result` và `sampling_interval_seconds`. Giá trị ngoài khoảng bị từ chối. Backend hiện có thể gửi cấu hình này qua luồng command đã triển khai; việc phát riêng lên `/config` cần publisher tương ứng ở backend.
 
 ---
 
-### 3.4. ACK Payload (`/ack`)
-ESP32 phản hồi ngay sau khi thực thi xong lệnh phần cứng.
+### 3.5. ACK Payload (`/ack`)
+Node phản hồi sau khi xử lý lệnh; ACK của ESP32 xác nhận trạng thái phần cứng, còn ACK của simulator chỉ xác nhận trạng thái mô phỏng.
 
 ```json
 {
   "command_id": "cmd-a1b2c3d4e5f6",
+  "action": "FAN_SET",
   "result": "OK",
   "fan_state": "ON",
+  "led_state": "OFF",
+  "sampling_interval_seconds": 10,
   "ts": "2026-11-07T14:30:02Z"
 }
 ```
@@ -122,6 +139,9 @@ Hệ thống cấu hình danh sách kiểm soát quyền (Access Control List - 
 
 > [!NOTE]
 > Bất kỳ hành vi nào của Node B cố ý publish vào topic của Node A (ca kiểm thử **SEC-02**) đều bị Broker từ chối ngay lập tức ở tầng giao vận và không được chuyển tiếp tới Backend.
+
+> [!WARNING]
+> File `deployment/mosquitto/acl` hiện chưa cấp quyền đọc `/config` cho node hoặc ghi `/config` cho backend. Vì vậy, cấu hình lấy mẫu có thể gửi qua `/command` bằng API hiện tại; chỉ dùng `/config` sau khi chủ phần broker cập nhật ACL tương ứng.
 
 ---
 
