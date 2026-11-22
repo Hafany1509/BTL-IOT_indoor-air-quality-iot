@@ -34,4 +34,17 @@ Kiểm tra nhãn chân trên đúng module trước khi cấp nguồn. GPIO34 l�
 
 ## Giới hạn hiện tại
 
-Firmware chưa có OTA và chưa nhận cấu hình ngưỡng cảnh báo; ngưỡng vẫn do backend quản lý. Nếu mất NTP, firmware tạm bỏ qua telemetry để không gửi timestamp giả. Chưa xác minh firmware bằng biên dịch hoặc phần cứng.
+Firmware chưa có OTA và chưa nhận cấu hình ngưỡng cảnh báo; ngưỡng vẫn do backend quản lý. Nếu mất NTP, firmware tạm bỏ qua telemetry để không gửi timestamp giả.
+
+## Đã kiểm chứng (22/11/2026)
+
+Đã biên dịch và chạy trên ESP32 thật: telemetry, heartbeat, `LED_SET` kèm ACK, LWT offline và tự kết nối lại đều hoạt động. Chưa test `FAN_SET` với relay thật. Kết quả chi tiết: [hardware/bring-up-results.md](../hardware/bring-up-results.md).
+
+Sketch kiểm tra phần cứng không cần Wi-Fi/MQTT (nháy LED, đọc DHT22 và MQ-135):
+
+```powershell
+pio run -e hwtest -t upload
+pio device monitor -e hwtest
+```
+
+Module relay CW-025 của nhóm đặt jumper ở **H** (kích mức cao), nên `secrets.h` dùng `#define RELAY_ACTIVE_LOW 0`.

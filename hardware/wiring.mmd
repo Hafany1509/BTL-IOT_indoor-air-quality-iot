@@ -16,10 +16,10 @@ flowchart LR
     dht -->|"DATA → GPIO4; VCC → 3V3"| esp
     mq -->|"AO"| divider
     divider -->|"tối đa dưới 3,3V → GPIO34 / ADC1"| esp
-    esp -->|"GPIO26 → IN"| relay
+    esp -->|"GPIO26 → IN (jumper H)"| relay
     esp -->|"GPIO25"| led
-    supply["Nguồn 5V phù hợp"] -->|"nguồn module"| mq
-    supply -->|"VCC module"| relay
+    supply["5V: chân VIN ESP32<br/>(USB PC khi test, sạc 5V ≥ 1A khi demo)"] -->|"VCC"| mq
+    supply -->|"DC+"| relay
     supply -->|"COM → NO"| fan
     common["GND chung cho ESP32, cảm biến và nguồn logic"] --- esp
     common --- dht

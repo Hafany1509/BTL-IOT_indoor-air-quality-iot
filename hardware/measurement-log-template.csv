@@ -1,2 +1,8 @@
 date_time_local,firmware_commit,stage,condition,esp32_supply_v,mq135_supply_v,mq135_ao_v_before_divider,gpio34_v_after_divider,temperature_c,humidity_pct,mq135_adc_raw,telemetry_received,command_action,command_id,ack_result,reconnect_seconds,evidence_path,notes
 ,,,,,,,,,,,,,,,,,
+2026-11-22 (gio khong ghi),ec386b8,hwtest,phong; DHT22+LED,USB PC,,,,23.9,68.1,,,,,,,serial log,LED nhay 1Hz; DHT22 ok=14 fail=0
+2026-11-22 (gio khong ghi),ec386b8,hwtest,ha hoi vao DHT22,USB PC,,,,23.9,80.4,,,,,,,serial log,do am tang 68.2->80.4
+2026-11-22 (gio khong ghi),ec386b8,hwtest,MQ-135 khong khi phong,USB PC,VIN (khong do),chua do (khong co dong ho),0.142 (ESP32 tu do),24.5,69.5,0,,,,,,serial log,raw 0 = duoi nguong ADC; POWER_LED sang
+2026-11-22 (gio khong ghi),ec386b8,hwtest,MQ-135 + giay tham con 1-2cm,USB PC,VIN (khong do),chua do (khong co dong ho),~0.33 (uoc tinh tu raw),,,235,,,,,,serial log,gia tri cao nhat
+2026-11-22 22:28,a713b75 (main.cpp goc),main,MQTT end-to-end,USB PC,,,,24.5,73.6,0,yes,LED_SET ON,cmd-cd51d74ec430,OK,,docs/reports/bao-cao-loi-backend-2026-11-22.md,ACK <0.1s; backend ghi TIMEOUT (loi backend)
+2026-11-22 23:13,6f050a5,main,rut USB -> LWT,USB PC,,,,25.1,74.2,0,yes,,,,45,docs/reports/kiem-thu-bao-mat-mqtt-2026-11-22.md,LWT offline sau ~45s; cam lai -> ACTIVE
