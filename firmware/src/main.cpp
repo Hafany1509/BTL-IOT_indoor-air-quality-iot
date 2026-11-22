@@ -218,9 +218,11 @@ void beginMqtt() {
   mqtt.setKeepAlive(30);
   mqtt.setCleanSession(true);
 
-  const String statusTopic = topic("status");
+  // AsyncMqttClient keeps only the pointer, so the will topic must outlive this function.
+  static char willTopic[96];
+  snprintf(willTopic, sizeof(willTopic), "home/%s/%s/status", ROOM_ID, DEVICE_ID);
   static constexpr char offlinePayload[] = R"({"state":"offline"})";
-  mqtt.setWill(statusTopic.c_str(), 1, true, offlinePayload, sizeof(offlinePayload) - 1);
+  mqtt.setWill(willTopic, 1, true, offlinePayload, sizeof(offlinePayload) - 1);
 
   mqtt.onConnect(onMqttConnect);
   mqtt.onDisconnect(onMqttDisconnect);
