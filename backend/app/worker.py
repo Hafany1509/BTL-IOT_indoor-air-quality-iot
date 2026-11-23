@@ -7,6 +7,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
+
 import paho.mqtt.client as mqtt
 from sqlalchemy import URL, create_engine, select, text, update
 from sqlalchemy.orm import sessionmaker
