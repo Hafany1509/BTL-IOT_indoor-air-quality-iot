@@ -4,6 +4,7 @@ Tài liệu này đặc tả sơ đồ tuần tự cho 2 quy trình vận hành 
 1. **Quy trình 1 (D10)**: Thu thập dữ liệu cảm biến, lưu trữ chuỗi thời gian và kích hoạt cảnh báo ngưỡng (Telemetry & Alerting Flow).
 2. **Quy trình 2 (D11)**: Gửi lệnh điều khiển hai chiều, nhận phản hồi ACK và giám sát Timeout (Command & ACK Flow).
 
+
 ---
 
 ## 1. Quy Trình 1: Thu Thập Telemetry & Kích Hoạt Cảnh Báo (D10)
