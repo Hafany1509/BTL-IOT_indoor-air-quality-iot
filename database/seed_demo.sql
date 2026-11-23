@@ -5,6 +5,7 @@
 
 SET NAMES utf8mb4;
 
+
 -- 1. Phòng mẫu
 INSERT INTO rooms (room_id, name, description) VALUES
 ('room-a', 'Phòng Thí Nghiệm IoT A', 'Khu vực demo phần cứng ESP32 + DHT22 + MQ-135'),
