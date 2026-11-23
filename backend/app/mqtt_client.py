@@ -4,6 +4,7 @@ import logging
 import os
 from typing import Any
 
+
 import paho.mqtt.client as mqtt
 
 log = logging.getLogger("api.mqtt")
