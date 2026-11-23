@@ -45,7 +45,7 @@ Gửi định kỳ theo chu kỳ (mặc định 10 giây).
   "ts": "2026-11-07T14:30:00Z",
   "temperature_c": 28.5,
   "humidity_pct": 62.4,
-  "mq135_adc_raw": 580
+  "mq135_adc_raw": 12
 }
 ```
 

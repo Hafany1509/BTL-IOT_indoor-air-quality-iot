@@ -15,12 +15,12 @@ Tài liệu này ghi nhận kết quả thực thi kiểm thử toàn diện đ�
 | **T05** | Xử lý payload lỗi / bất thường | Unit Test Pydantic | Loại bỏ gói tin thiếu trường, sai kiểu hoặc giá trị ngoài ngưỡng vật lý. | Pydantic bắt lỗi `ValueError`, worker không bị crash. | **PASS** ✅ |
 | **T06** | Lọc lịch sử theo thời gian & node | API Telemetry Query | Trả về chuỗi số đo lọc theo `from`/`to`, sắp xếp giảm dần theo thời gian. | HTTP 200, phản hồi danh sách mẫu đúng khoảng thời gian. | **PASS** ✅ |
 | **T07** | Vượt ngưỡng cảnh báo & Cooldown | Worker Alert Engine | Kích hoạt cảnh báo `OPEN`; mẫu lặp trong thời gian cooldown bị bỏ qua. | Cảnh báo được ghi vào bảng `alerts`; không bị bão spam. | **PASS** ✅ |
-| **T08** | Operator gửi lệnh & Nhận ACK | API / MQTT Test | Lệnh chuyển `SENT` → `ACKED` sau khi ESP32 phản hồi thành công. | Lệnh lưu trạng thái `ACKED` kèm `result_payload`. | **PASS** ✅ |
+| **T08** | Operator gửi lệnh & Nhận ACK | API / MQTT Test | Lệnh chuyển `SENT` → `ACKED` sau khi ESP32 phản hồi thành công. | Lệnh lưu trạng thái `ACKED` kèm `result_payload`. Đã sửa race condition: UPDATE có điều kiện `WHERE status='PENDING'` ngăn API ghi đè ACKED → SENT khi worker xử lý ACK nhanh hơn. | **PASS** ✅ |
 | **T09** | Chặn Viewer gửi lệnh điều khiển | Pytest Security | Viewer gọi API điều khiển bị từ chối với HTTP 403 Forbidden. | Backend trả về HTTP 403 Forbidden, không phát MQTT. | **PASS** ✅ |
 | **T10** | Chặn truy cập trái phạm vi (IDOR) | Pytest Security | Operator không thể xem/điều khiển thiết bị ngoài phạm vi được gán. | Backend trả về HTTP 403 Forbidden ("Outside assigned scope"). | **PASS** ✅ |
 | **T11** | Ngắt kết nối & Khôi phục LWT | Mosquitto Test | Mất kết nối quá 60s chuyển `OFFLINE`; kết nối lại tự động chuyển `ACTIVE`. | Trạng thái cập nhật chính xác theo chu kỳ heartbeat và LWT. | **PASS** ✅ |
 | **T12** | Khóa thiết bị cấm gửi/nhận tin | Backend / Broker | Node bị `LOCKED` không nhận lệnh từ API và bị worker từ chối telemetry. | API từ chối phát lệnh; worker bỏ qua dữ liệu từ node bị khóa. | **PASS** ✅ |
-| **T13** | Xử lý lệnh không ACK (Timeout) | Watchdog Test | Lệnh không có phản hồi sau `timeout_seconds` tự động chuyển `TIMEOUT`. | Trạng thái chuyển thành `TIMEOUT` kèm thông báo lỗi rõ ràng. | **PASS** ✅ |
+| **T13** | Xử lý lệnh không ACK (Timeout) | Watchdog Test | Lệnh không có phản hồi sau `timeout_seconds` tự động chuyển `TIMEOUT`. | Trạng thái chuyển thành `TIMEOUT` kèm thông báo lỗi rõ ràng. Watchdog chỉ áp dụng cho lệnh ở trạng thái `SENT`; lệnh đã `ACKED` được bảo vệ khỏi bị ghi đè. | **PASS** ✅ |
 | **T14** | Khử trùng lặp (Idempotency) | MySQL Insert Test | Gửi lại cùng một bản tin telemetry (trùng boot_id & seq) không nhân đôi dữ liệu. | `ON DUPLICATE KEY UPDATE` giữ nguyên tính toàn vẹn 1 bản ghi duy nhất. | **PASS** ✅ |
 | **T15** | Kiểm toán & Loại bỏ bí mật | Audit Log Query | Ghi nhận đầy đủ thao tác; trường nhạy cảm được che giấu `[REDACTED]`. | Bảng `audit_logs` lưu vết đầy đủ, không để lộ mật khẩu/token. | **PASS** ✅ |
 | **T16** | Khả năng phục hồi hệ thống | Docker Restart | Khởi động lại API và Worker không gây mất dữ liệu hoặc lỗi kết nối. | Hệ thống tự kết nối lại broker và tiếp tục phục vụ bình thường. | **PASS** ✅ |
@@ -48,5 +48,12 @@ Tài liệu này ghi nhận kết quả thực thi kiểm thử toàn diện đ�
 
 ## 3. Kết Luận Nghiệm Thu
 
-Bộ mã nguồn Backend và CSDL đã vượt qua **100% các tiêu chí kỹ thuật và ca kiểm thử (16/16 ca PASS)**. Hệ thống sẵn sàng cho việc tích hợp hiển thị trực quan trên giao diện Frontend React và kết nối với phần cứng ESP32 thật tại phòng thí nghiệm.
+Bộ mã nguồn Backend và CSDL đã vượt qua **100% các tiêu chí kỹ thuật và ca kiểm thử (16/16 ca PASS)** trong môi trường tích hợp. Hệ thống sẵn sàng cho việc tích hợp hiển thị trực quan trên giao diện Frontend React và kết nối với phần cứng ESP32 thật tại phòng thí nghiệm.
+
+> [!NOTE]
+> **Cập nhật sau test đầu-cuối với ESP32 thật (22/11/2026):** Quá trình test phát hiện 3 lỗi hồi quy đã được vá trong cùng sprint:
+> 1. **Race condition ACK/SENT** (`mqtt_client.py`, `routers/commands.py`): Lệnh đã được ESP32 ACK bị ghi đè thành `TIMEOUT` do `loop_start()` bị thiếu và `UPDATE` không có điều kiện → đã sửa.
+> 2. **Hash mật khẩu seed sai** (`database/seed_demo.sql`): Hash cũ không khớp `Demo@2026!` → đã thay hash mới sinh bằng `bcrypt.gensalt(12)` và verify xác nhận.
+> 3. **Ngưỡng MQ-135 không phù hợp thực tế** (`worker.py`, `seed_demo.sql`): Ngưỡng cũ (600/1200/2000) quá cao so với ADC thực tế (phòng thường 0–6, cồn tối đa ~235) → đã hiệu chỉnh xuống 50/150/300; alert rule hạ từ 1500 xuống 150.
+
 

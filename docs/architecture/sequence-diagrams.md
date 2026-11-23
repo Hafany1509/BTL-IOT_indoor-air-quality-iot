@@ -62,8 +62,9 @@ sequenceDiagram
     else Hợp lệ
         API->>API: Sinh command_id duy nhất (UUID)
         API->>DB: Lưu lệnh (status = 'PENDING', timeout_at = now + 15s)
-        API->>Broker: Publish QoS 1 (home/room-a/esp32-a-01/command)
-        API->>DB: Cập nhật lệnh (status = 'SENT', sent_at = now)
+        API->>Broker: Publish QoS 1 + loop_start() – chờ PUBACK broker xác nhận
+        API->>DB: Cập nhật lệnh (status = 'SENT', sent_at = now) – chỉ khi vẫn PENDING
+        Note over API,DB: Nếu worker đã ghi ACKED trước khi API cập nhật,<br/>UPDATE có điều kiện WHERE status='PENDING' sẽ không ghi đè
         API-->>Operator: 201 Created (Trả về command_id & trạng thái SENT)
     end
 
