@@ -2,6 +2,7 @@
 
 Tài liệu này ghi nhận kết quả thực thi kiểm thử toàn diện đối với các thành phần **Backend API, Cơ sở dữ liệu MySQL, và Broker Mosquitto**, đối soát trực tiếp với 16 ca kiểm thử (T01 → T16) và các tiêu chí đánh giá an toàn thông tin của đồ án.
 
+
 ---
 
 ## 1. Bảng Tổng Hợp Kết Quả Thực Thi 16 Ca Kiểm Thử
