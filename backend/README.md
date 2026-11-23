@@ -11,6 +11,7 @@ Thư mục `backend/` chứa toàn bộ mã nguồn tầng ứng dụng (Applica
 * **Python**: Phiên bản `>= 3.12` (Khuyến nghị 3.12 hoặc 3.13).
 * **MySQL**: Phiên bản 8.0 hoặc 8.4 LTS (InnoDB, `utf8mb4`).
 * **Mosquitto MQTT Broker**: Phiên bản 2.0+ (đã kích hoạt xác thực và file phân quyền ACL).
+* 
 
 ---
 
