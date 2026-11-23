@@ -38,12 +38,18 @@ INSERT_TELEMETRY = text("""
 
 
 def evaluate_air_quality(mq135_adc_raw: int) -> str:
-    """Classifies relative air quality level based on MQ-135 raw ADC count."""
-    if mq135_adc_raw < 600:
+    """Classifies relative air quality level based on MQ-135 raw ADC count.
+
+    Ngưỡng được hiệu chỉnh theo đo thực tế với ESP32 (ADC 12-bit, mạch chia áp 20k/10k):
+      - Không khí trong phòng thường: 0–6
+      - Hơi cồn sát cảm biến: tối đa ~235
+    Các mức dưới đây phản ánh baseline thực tế; cần tinh chỉnh sau khi cảm biến burn-in.
+    """
+    if mq135_adc_raw < 50:
         return "GOOD"
-    elif mq135_adc_raw < 1200:
+    elif mq135_adc_raw < 150:
         return "MODERATE"
-    elif mq135_adc_raw < 2000:
+    elif mq135_adc_raw < 300:
         return "POOR"
     return "UNHEALTHY"
 
@@ -139,7 +145,7 @@ def watchdog_thread(session_factory, stop_event: threading.Event):
             with session_factory() as session:
                 now = datetime.now(timezone.utc).replace(tzinfo=None)
 
-                # 1. Check command timeouts
+                # 1. Check command timeouts – chỉ áp dụng cho SENT, bỏ qua ACKED/FAILED
                 timed_out_cmds = session.execute(
                     select(Command).where(
                         Command.status == CommandStatus.SENT,
@@ -148,6 +154,9 @@ def watchdog_thread(session_factory, stop_event: threading.Event):
                 ).scalars().all()
 
                 for cmd in timed_out_cmds:
+                    # Kiểm tra lại trạng thái trong vòng lặp để tránh race với worker ACK handler
+                    if cmd.status != CommandStatus.SENT:
+                        continue
                     cmd.status = CommandStatus.TIMEOUT
                     cmd.error_message = "Timeout: thiết bị không phản hồi ACK kịp thời"
                     log.info("Command %s timed out waiting for ACK", cmd.command_id)
