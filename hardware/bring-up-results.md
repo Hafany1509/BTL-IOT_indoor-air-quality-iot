@@ -106,6 +106,28 @@ Môi trường: Mosquitto, MySQL, API, worker chạy bằng Docker Compose trên
 
 Chi tiết bảo mật: [docs/reports/kiem-thu-bao-mat-mqtt-2026-11-22.md](../docs/reports/kiem-thu-bao-mat-mqtt-2026-11-22.md).
 
+### 4.1. Kiểm thử lại sau khi backend được sửa (24/11/2026)
+
+Backend `main` @ `03b3e12` (đã sửa lỗi ACK/TIMEOUT, hạ ngưỡng MQ-135: GOOD < 50 ≤ MODERATE < 150 ≤ POOR < 300 ≤ UNHEALTHY; luật cảnh báo `MQ135_RAW > 150` → CRITICAL). Thao tác qua giao diện web, tài khoản `operator_a`.
+
+| Hạng mục | Kết quả thực tế | KQ |
+|---|---|---|
+| Bật LED từ trang Điều khiển | Lệnh `cmd-e2a7ce59801f` → **"Node đã phản hồi"** (ACKED) ngay. LED trên mạch sáng. Các lệnh test ngày 23/11 trước khi sửa vẫn hiện "Hết thời gian chờ" trong lịch sử, làm bằng chứng trước/sau | ✅ |
+| Hơ giấy thấm nước hoa (có cồn) sát MQ-135 | `mq135_adc_raw`: 0 → 75 → **393** (UNHEALTHY) → 141 → 90 → 28 → 1, trong khoảng 50 giây | ✅ |
+| Cảnh báo CRITICAL trên dashboard | Cảnh báo #1 "Cảnh báo nồng độ khí MQ-135 bất thường" hiện ở trang Cảnh báo, mức Nghiêm trọng | ✅ |
+| Operator xác nhận cảnh báo | Bấm "Xác nhận tiếp nhận" → `status = ACKNOWLEDGED`, `acknowledged_by = 2` (operator_a), lưu trong MySQL | ✅ |
+
+**Phát hiện: báo động giả khi khởi động.** Cảnh báo #1 thực ra được tạo lúc **03:41:39 UTC**, ngay mẫu đầu tiên sau khi cắm USB (`raw = 234`), **trước** khi hơ nước hoa. Mẫu kế tiếp là 134, rồi 80, rồi về 0 sau khoảng 1 phút. Nguyên nhân: MQ-135 vừa cấp điện, dây đốt còn nguội, cho giá trị cao bất thường. Khi hơ nước hoa (đỉnh 393), worker **không tạo cảnh báo mới** vì cảnh báo #1 vẫn đang mở (chống trùng). **Đã sửa trong firmware:** trong **120 giây đầu** sau khởi động, ESP32 giữ lại telemetry, vì hợp đồng dữ liệu backend bắt buộc có `mq135_adc_raw` và cấm trường lạ, nên không gửi giá trị giả. Heartbeat vẫn gửi bình thường, kèm `"mq135_warming_up": true/false`. Kiểm chứng ngày 24/11 với khởi động nguội (rút USB khoảng 5 phút rồi cắm lại):
+
+| Thời điểm (UTC) | Sự kiện |
+|---|---|
+| 03:59:31 | `status online`, `uptime 35 s`, `mq135_warming_up: true`, không có telemetry |
+| 04:00:31 | `status online`, `uptime 95 s`, `mq135_warming_up: true`, không có telemetry |
+| 04:00:56 | Telemetry đầu tiên (`seq 0`, khoảng 120 s sau khởi động): 25,5 °C, 72,5 %, **`mq135_adc_raw = 0`** |
+| 04:01 trở đi | Telemetry đều mỗi 10 giây, MQ-135 = 0; **không có cảnh báo mới** |
+
+Cảnh báo giả #1 được operator đóng (`RESOLVED`) kèm ghi chú nguyên nhân.
+
 ## 5. Nguồn điện
 
 - Hiện tại toàn bộ (ESP32 + DHT22 + LED + MQ-135) lấy nguồn từ **cổng USB của PC**. MQ-135 lấy 5V từ chân VIN.
