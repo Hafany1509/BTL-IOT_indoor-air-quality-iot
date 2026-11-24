@@ -47,4 +47,11 @@ pio run -e hwtest -t upload
 pio device monitor -e hwtest
 ```
 
-Module relay CW-025 của nhóm đặt jumper ở **H** (kích mức cao), nên `secrets.h` dùng `#define RELAY_ACTIVE_LOW 0`.
+Module relay của nhóm đặt jumper ở **H** (kích mức cao), nên `secrets.h` dùng `#define RELAY_ACTIVE_LOW 0`.
+
+## Wi-Fi dự phòng và tự phục hồi
+
+- `secrets.h` có thể khai báo thêm mạng thứ 2: `WIFI_SSID_2`, `WIFI_PASSWORD_2`, `MQTT_HOST_2` (IP của máy chạy broker **trên mạng đó**). Firmware dùng `WiFiMulti`, vào mạng nào thì kết nối broker theo IP của mạng đó.
+- `WiFiMulti` chọn mạng **sóng mạnh nhất** trong các mạng đã khai báo. Khi cả hai mạng cùng có mặt (ví dụ ở nhà), máy tính chạy broker phải ở **cùng mạng** với ESP32 (xem Serial: `Wi-Fi connected, IP …; broker …`).
+- Mất Wi-Fi quá **60 giây** thì ESP32 tự khởi động lại để dò mạng từ đầu (sự cố hotspot iPhone ẩn SSID khi diễn tập 24/11). Sau khởi động lại bằng phần mềm, MQ-135 vẫn có điện nên **bỏ qua** thời gian chờ làm nóng 120 giây.
+- Heartbeat có thêm `reset_reason` (`power_on`, `software`, `brownout`, …) để biết vì sao node khởi động lại.
