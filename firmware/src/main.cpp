@@ -31,6 +31,10 @@ constexpr uint32_t DEFAULT_TELEMETRY_INTERVAL_MS = 10'000;
 constexpr uint32_t MIN_TELEMETRY_INTERVAL_MS = 2'000;
 constexpr uint32_t MAX_TELEMETRY_INTERVAL_MS = 300'000;
 constexpr uint32_t HEARTBEAT_INTERVAL_MS = 30'000;
+// MQ-135 reads abnormally high while its heater is still cold (measured: 234 at boot,
+// back to baseline after ~1 min), which raised false CRITICAL alerts. The backend
+// telemetry contract requires mq135_adc_raw, so telemetry is held until warm-up ends.
+constexpr uint32_t MQ135_WARMUP_MS = 120'000;
 constexpr uint32_t RETRY_INTERVAL_MS = 5'000;
 constexpr size_t RECENT_COMMAND_COUNT = 16;
 
@@ -218,9 +222,11 @@ void beginMqtt() {
   mqtt.setKeepAlive(30);
   mqtt.setCleanSession(true);
 
-  const String statusTopic = topic("status");
+  // AsyncMqttClient keeps only the pointer, so the will topic must outlive this function.
+  static char willTopic[96];
+  snprintf(willTopic, sizeof(willTopic), "home/%s/%s/status", ROOM_ID, DEVICE_ID);
   static constexpr char offlinePayload[] = R"({"state":"offline"})";
-  mqtt.setWill(statusTopic.c_str(), 1, true, offlinePayload, sizeof(offlinePayload) - 1);
+  mqtt.setWill(willTopic, 1, true, offlinePayload, sizeof(offlinePayload) - 1);
 
   mqtt.onConnect(onMqttConnect);
   mqtt.onDisconnect(onMqttDisconnect);
@@ -238,6 +244,7 @@ void publishStatus() {
   document["firmware_version"] = FIRMWARE_VERSION;
   document["uptime_seconds"] = millis() / 1000;
   document["sampling_interval_seconds"] = telemetryIntervalMs / 1000;
+  document["mq135_warming_up"] = millis() < MQ135_WARMUP_MS;
   if (utcTimestamp(timestamp, sizeof(timestamp))) {
     document["ts"] = timestamp;
   }
@@ -250,6 +257,13 @@ void publishStatus() {
 
 void publishTelemetry() {
   if (!mqttIsConnected) {
+    return;
+  }
+
+  const uint32_t uptimeMs = millis();
+  if (uptimeMs < MQ135_WARMUP_MS) {
+    Serial.printf("MQ-135 warming up; telemetry held (%lu s left)\n",
+                  static_cast<unsigned long>((MQ135_WARMUP_MS - uptimeMs) / 1000));
     return;
   }
 

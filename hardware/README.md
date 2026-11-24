@@ -52,6 +52,12 @@ GPIO34 chỉ nhận tín hiệu analog. Mạch chia áp ví dụ đưa 5V xuốn
 | Relay IN | 26 |
 | LED | 25 |
 
+## Lắp ráp thực tế
+
+ESP32 DevKit V1 quá rộng để cắm vắt qua một breadboard 830 lỗ mà vẫn còn lỗ trống ở cả hai dãy chân. Nhóm ghép MB-102 với một breadboard 170 lỗ: dãy 3V3…D23 cắm ở cột J của MB-102, dãy VIN…EN cắm trên breadboard 170 lỗ. Tọa độ từng dây, module relay đã chọn (CW-025, jumper H) và kết quả đo thực tế nằm ở [bring-up-results.md](bring-up-results.md).
+
+Kịch bản trình diễn phần cứng và cách xử lý sự cố khi demo: [demo-script.md](demo-script.md).
+
 ## Chuẩn bị nghiệm thu
 
 Trước khi cấp nguồn, xem [kế hoạch đo và nghiệm thu](validation-plan.md). Khi bắt đầu lắp, điền [`measurement-log-template.csv`](measurement-log-template.csv) và chỉ ghi PASS khi đã có kết quả thực tế.

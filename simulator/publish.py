@@ -29,15 +29,21 @@ def utc_now() -> str:
 
 
 def make_sample(boot_id: str, seq: int, scenario: str) -> dict:
-    """Create an in-contract sample; scenarios make demonstrations repeatable."""
+    """Create an in-contract sample; scenarios make demonstrations repeatable.
+
+    MQ-135 levels follow the real room A node (20k/10k divider, 12-bit ADC):
+    clean indoor air reads ~0, alcohol/perfume vapour peaks at ~235-393.
+    Backend bands: GOOD < 50 <= MODERATE < 150 <= POOR < 300 <= UNHEALTHY,
+    and the seeded gas alert fires above 150.
+    """
     temperature_c = round(random.uniform(26.0, 30.0), 1)
     humidity_pct = round(random.uniform(50.0, 68.0), 1)
-    mq135_adc_raw = random.randint(350, 800)
+    mq135_adc_raw = random.choice((0, 0, 0, random.randint(1, 40)))
 
     if scenario in {"hot", "alert"}:
         temperature_c = 34.5
     if scenario in {"high_gas", "alert"}:
-        mq135_adc_raw = 1800
+        mq135_adc_raw = random.randint(200, 280)
 
     return {
         "schema_version": 1,
@@ -78,7 +84,9 @@ def main() -> None:
             "state": state,
             "firmware_version": FIRMWARE_VERSION,
             "uptime_seconds": int(time.monotonic() - started_at),
-            "sampling_interval_seconds": sample_interval_seconds,
+            "sampling_interval_seconds": int(sample_interval_seconds),
+            "mq135_warming_up": False,  # simulated sensor has no heater
+            "ts": utc_now(),
         }
         info = client.publish(
             f"{BASE}/status", json.dumps(body), qos=1, retain=True
@@ -97,7 +105,7 @@ def main() -> None:
             "result": result,
             "fan_state": fan_state,
             "led_state": led_state,
-            "sampling_interval_seconds": sample_interval_seconds,
+            "sampling_interval_seconds": int(sample_interval_seconds),
             "ts": utc_now(),
         }
         if action:
@@ -249,7 +257,8 @@ def main() -> None:
                         "state": "offline",
                         "firmware_version": FIRMWARE_VERSION,
                         "uptime_seconds": int(time.monotonic() - started_at),
-                        "sampling_interval_seconds": sample_interval_seconds,
+                        "sampling_interval_seconds": int(sample_interval_seconds),
+                        "ts": utc_now(),
                     }),
                     qos=1,
                     retain=True,
