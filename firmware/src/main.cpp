@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiMulti.h>
 #include <DHT.h>
 #include <AsyncMqttClient.h>
 #include <ArduinoJson.h>
@@ -35,6 +36,11 @@ constexpr uint32_t HEARTBEAT_INTERVAL_MS = 30'000;
 // back to baseline after ~1 min), which raised false CRITICAL alerts. The backend
 // telemetry contract requires mq135_adc_raw, so telemetry is held until warm-up ends.
 constexpr uint32_t MQ135_WARMUP_MS = 120'000;
+// An iPhone hotspot can hide itself while its settings page is closed; a dropped
+// node then never found it again until reset (rehearsal 24/11). Restarting after
+// a minute without Wi-Fi rescans from scratch and recovers on its own.
+constexpr uint32_t WIFI_LOST_RESTART_MS = 60'000;
+constexpr uint32_t WIFI_CONNECT_TIMEOUT_MS = 8'000;
 constexpr uint32_t RETRY_INTERVAL_MS = 5'000;
 constexpr size_t RECENT_COMMAND_COUNT = 16;
 
@@ -44,6 +50,13 @@ uint32_t lastTelemetryAt = 0;
 uint32_t lastHeartbeatAt = 0;
 uint32_t lastMqttAttemptAt = 0;
 uint32_t lastWifiAttemptAt = 0;
+uint32_t wifiLostSince = 0;  // 0 while Wi-Fi is up
+const char* activeMqttHost = MQTT_HOST;
+// After a software restart the MQ-135 heater stayed powered (it runs from VIN),
+// so the cold-start warm-up hold is not needed.
+bool skipMq135Warmup = false;
+const char* resetReasonName = "unknown";
+WiFiMulti wifiMulti;
 bool fanIsOn = false;
 bool ledIsOn = false;
 volatile bool mqttIsConnected = false;
@@ -70,6 +83,38 @@ bool utcTimestamp(char* output, size_t outputSize) {
     return false;
   }
   return strftime(output, outputSize, "%Y-%m-%dT%H:%M:%SZ", &utc) > 0;
+}
+
+bool mq135WarmingUp() {
+  return !skipMq135Warmup && millis() < MQ135_WARMUP_MS;
+}
+
+const char* describeResetReason(esp_reset_reason_t reason) {
+  switch (reason) {
+    case ESP_RST_POWERON: return "power_on";
+    case ESP_RST_SW: return "software";
+    case ESP_RST_PANIC: return "panic";
+    case ESP_RST_BROWNOUT: return "brownout";
+    case ESP_RST_INT_WDT:
+    case ESP_RST_TASK_WDT:
+    case ESP_RST_WDT: return "watchdog";
+    case ESP_RST_EXT: return "external";
+    case ESP_RST_DEEPSLEEP: return "deep_sleep";
+    default: return "other";
+  }
+}
+
+void onWifiConnected() {
+  wifiLostSince = 0;
+  activeMqttHost = MQTT_HOST;
+#ifdef WIFI_SSID_2
+  if (WiFi.SSID() == WIFI_SSID_2) {
+    activeMqttHost = MQTT_HOST_2;
+  }
+#endif
+  mqtt.setServer(activeMqttHost, MQTT_PORT);
+  Serial.printf("Wi-Fi connected, IP %s; broker %s\n",
+                WiFi.localIP().toString().c_str(), activeMqttHost);
 }
 
 void setFan(bool enabled) {
@@ -244,7 +289,8 @@ void publishStatus() {
   document["firmware_version"] = FIRMWARE_VERSION;
   document["uptime_seconds"] = millis() / 1000;
   document["sampling_interval_seconds"] = telemetryIntervalMs / 1000;
-  document["mq135_warming_up"] = millis() < MQ135_WARMUP_MS;
+  document["mq135_warming_up"] = mq135WarmingUp();
+  document["reset_reason"] = resetReasonName;
   if (utcTimestamp(timestamp, sizeof(timestamp))) {
     document["ts"] = timestamp;
   }
@@ -261,7 +307,7 @@ void publishTelemetry() {
   }
 
   const uint32_t uptimeMs = millis();
-  if (uptimeMs < MQ135_WARMUP_MS) {
+  if (mq135WarmingUp()) {
     Serial.printf("MQ-135 warming up; telemetry held (%lu s left)\n",
                   static_cast<unsigned long>((MQ135_WARMUP_MS - uptimeMs) / 1000));
     return;
@@ -330,14 +376,22 @@ void setup() {
            static_cast<unsigned long>(esp_random()),
            static_cast<unsigned long>(esp_random()));
 
+  const esp_reset_reason_t resetReason = esp_reset_reason();
+  resetReasonName = describeResetReason(resetReason);
+  skipMq135Warmup = resetReason == ESP_RST_SW;
+
   beginMqtt();
+  WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
   configTime(0, 0, "pool.ntp.org", "time.google.com");
 
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  lastWifiAttemptAt = millis();
-  Serial.printf("Starting node %s in %s\n", DEVICE_ID, ROOM_ID);
+  wifiMulti.addAP(WIFI_SSID, WIFI_PASSWORD);
+#ifdef WIFI_SSID_2
+  wifiMulti.addAP(WIFI_SSID_2, WIFI_PASSWORD_2);
+#endif
+  wifiLostSince = millis() | 1;
+  Serial.printf("Starting node %s in %s (reset: %s)\n", DEVICE_ID, ROOM_ID, resetReasonName);
 }
 
 void loop() {
@@ -345,14 +399,28 @@ void loop() {
 
   if (WiFi.status() != WL_CONNECTED) {
     mqttIsConnected = false;
-    if (now - lastWifiAttemptAt >= 10'000) {
-      Serial.println("Retrying Wi-Fi connection");
-      WiFi.disconnect();
-      WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-      lastWifiAttemptAt = now;
+    if (wifiLostSince == 0) {
+      wifiLostSince = now | 1;
+      Serial.println("Wi-Fi lost");
+    }
+    if (now - wifiLostSince >= WIFI_LOST_RESTART_MS) {
+      Serial.println("No Wi-Fi for 60 s; restarting");
+      delay(100);
+      ESP.restart();
+    }
+    if (lastWifiAttemptAt == 0 || now - lastWifiAttemptAt >= 10'000) {
+      Serial.println("Connecting to Wi-Fi");
+      if (wifiMulti.run(WIFI_CONNECT_TIMEOUT_MS) == WL_CONNECTED) {
+        onWifiConnected();
+      }
+      lastWifiAttemptAt = millis();
     }
     delay(20);
     return;
+  }
+
+  if (wifiLostSince != 0) {  // reconnected on its own
+    onWifiConnected();
   }
 
   if (!mqttIsConnected && now - lastMqttAttemptAt >= RETRY_INTERVAL_MS) {

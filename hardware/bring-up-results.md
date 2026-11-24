@@ -17,8 +17,14 @@ ESP32 DevKit V1 (30 chân) có hai dãy chân cách nhau 10 bước lỗ. Nếu 
 
 > Số hàng trong tài liệu đọc theo **số in cạnh cột A** của MB-102. Hai nửa A–E và F–J của board này được in số ngược chiều nhau.
 
-![Toàn cảnh mạch](evidence/2026-11-22-overview.jpg)
-*(Ảnh sẽ bổ sung: toàn cảnh, cận chân ESP32, cận mạch chia áp MQ-135.)*
+Ảnh mạch hoàn chỉnh (24/11/2026):
+
+| | |
+|---|---|
+| ![Toàn cảnh từ trên xuống](evidence/2026-11-24-overview-top.jpg) | ![Mạch đầy đủ kèm relay và quạt](evidence/2026-11-24-full-with-fan.jpg) |
+| *Toàn cảnh: ESP32 vắt qua MB-102 (cột J) và breadboard 170 lỗ; DHT22, MQ-135, mạch chia áp, LED* | *Mạch đầy đủ với module relay và quạt 5V 0,2A* |
+| ![Góc nghiêng breadboard](evidence/2026-11-24-breadboard-side.jpg) | ![Cận module relay](evidence/2026-11-24-relay-closeup.jpg) |
+| *Góc nghiêng: 3 điện trở 10 kΩ của mạch chia áp (hàng 43–52), LED và 220 Ω (hàng 10–14)* | *Module relay SRD-05VDC-SL-C, jumper H, đèn PWR sáng* |
 
 ## 2. Bảng đấu nối đã lắp
 
@@ -160,4 +166,4 @@ Trong khoảng 36 giây quạt chạy, broker chỉ ghi nhận 1 lần ESP32 k�
 - [x] Đấu relay và quạt, test `FAN_SET` ON/OFF *(24/11)*.
 - [ ] Đo điện áp AO và GPIO34 bằng đồng hồ vạn năng khi có, để bổ sung cho số đo của ESP32.
 - [ ] Burn-in MQ-135, ghi giá trị nền ổn định, chốt ngưỡng cảnh báo cùng backend.
-- [ ] Bổ sung ảnh mạch vào `hardware/evidence/`.
+- [x] Bổ sung ảnh mạch vào `hardware/evidence/` *(24/11, đã xoá metadata EXIF)*.

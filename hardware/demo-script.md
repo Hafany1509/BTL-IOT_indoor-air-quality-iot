@@ -38,15 +38,18 @@ Cách chắc chắn nhất là dùng **điểm phát Wi-Fi từ điện thoại*
 
 > Không gửi hay chụp màn hình `secrets.h` vào báo cáo/slide.
 
+**Wi-Fi dự phòng (từ 25/11):** `secrets.h` có 2 mạng: hotspot iPhone (mạng 1, dùng khi demo) và Wi-Fi nhà (mạng 2, dùng khi test ở nhà), mỗi mạng kèm IP máy tính riêng. ESP32 vào mạng nào có sóng mạnh hơn. **Máy tính phải ở cùng mạng với ESP32.** Ở lớp không có Wi-Fi nhà nên ESP32 sẽ vào hotspot. Nếu mất Wi-Fi quá 60 giây, ESP32 tự khởi động lại để dò lại mạng.
+
 ---
 
 ## 2. Dựng hệ thống (khoảng 5 phút trước khi đến lượt trình bày)
 
 | # | Thao tác | Kết quả phải thấy |
 |---|---|---|
+| 0 | iPhone: bật dữ liệu di động, **mở trang Điểm phát sóng cá nhân và để nguyên trang đó** (không khoá màn hình, nên cắm sạc). Máy tính kết nối hotspot | Diễn tập 24/11: khi iPhone đóng trang này, ESP32 bị rớt mạng và **không tìm lại được hotspot** suốt 9 phút |
 | 1 | Mở Docker Desktop, đợi "Engine running" | |
-| 2 | `docker compose --profile sim up -d` (thư mục repo) | mosquitto, mysql, api, worker, simulator đều Up |
-| 3 | Chạy frontend: `cd frontend` rồi `npx vite` | Mở `http://localhost:5173` được |
+| 2 | Tab **Containers** → dòng `indoor-air-quality-iot` → bấm **▶ Start** (hoặc lệnh `docker compose --profile sim up -d` trong thư mục repo). Bấm **>** để mở rộng | Đủ 5 container chấm xanh: mosquitto, mysql, api, worker, simulator. Nếu `mosquitto` không chạy: `docker compose up -d --force-recreate mosquitto` (đã sửa gốc trong `start.sh` ngày 25/11) |
+| 3 | Chạy frontend: `cd C:\Users\Legion\Desktop\BTL-IOT-github\frontend; npx vite`, **để nguyên cửa sổ PowerShell** | Thấy dòng `Local: http://localhost:5173/` |
 | 4 | Đăng nhập `operator_a` trên trình duyệt | Dashboard hiện ESP32 phòng A |
 | 5 | **Cắm điện ESP32** (sạc 5V hoặc cổng USB **SS**) | Đèn nguồn ESP32, POWER_LED MQ-135, PWR relay sáng |
 | 6 | **Đợi 2 phút** cho MQ-135 làm nóng | Dashboard: node **Trực tuyến**. Telemetry chỉ bắt đầu sau khoảng 120 giây (firmware cố ý giữ lại) |
@@ -120,10 +123,22 @@ Làm tương tự với **Quạt thông gió** → nghe relay kêu "tách", **qu
 | DHT22 báo lỗi/không đổi | Dây OUT → D4 lỏng | Ấn lại dây; số liệu sẽ có ở lần đọc kế tiếp |
 | Quạt không quay khi relay kêu "tách" | Dây COM/NO hoặc dây quạt lỏng | Rút nguồn, kiểm tra vít COM/NO và giắc quạt |
 
+## 4b. Kết quả diễn tập đầy đủ (25/11/2026, Wi-Fi nhà)
+
+| Cảnh | Kết quả | Thời gian thực tế |
+|---|---|---|
+| Dựng hệ thống (Docker Desktop ▶ Start, frontend, cắm ESP32) | Đạt sau khi sửa `start.sh` (mosquitto không khởi động lại được) | khoảng 5 phút gồm 2 phút làm nóng |
+| 1. Hà hơi vào DHT22 | Độ ẩm 52 → 6x %. Nên hà hơi gần hơn, lâu hơn (5–8 s) để tăng rõ hơn | 10–20 s mới thấy trên web |
+| 2. LED và quạt từ web | Cả 4 lệnh "Node đã phản hồi"; LED, quạt bật/tắt đúng | ACK gần như tức thì |
+| 3. Hơ nước hoa | MQ-135 lên **541**, chất lượng "Kém". Lần đầu **không có cảnh báo mới** vì cảnh báo cũ từ hôm trước vẫn mở (backend chống báo trùng). Giải quyết cảnh báo cũ rồi hơ lại → cảnh báo mới, xác nhận được | Cảnh báo hiện trên web sau ≤ 20 s |
+| 4. Rút / cắm USB | Broker phát LWT, worker ghi OFFLINE; cắm lại → ACTIVE | **khoảng 1 phút** mới "Mất kết nối"; **5–10 s** đã "Trực tuyến" lại |
+
+Ghi chú trên giao diện (không phải lỗi): khung vàng "API kiểm tra quyền CONTROL hoặc MANAGE…" là chú thích về phân quyền (dùng làm điểm nói về RBAC); "Trạng thái vật lý chưa xác định" là do frontend chưa hiển thị `fan_state`/`led_state` có sẵn trong ACK.
+
 ## 5. Ngay trước khi lên trình bày (checklist 1 phút)
 
 - [ ] Node phòng A **Trực tuyến** và **đã có số đo** (đã qua 2 phút làm nóng).
-- [ ] Trang Cảnh báo: **không còn cảnh báo MQ-135 đang mở/đã xác nhận** (giải quyết hết).
+- [ ] Trang Cảnh báo: **không còn cảnh báo MQ-135 đang mở/đã xác nhận** (giải quyết hết). **Bắt buộc**: diễn tập 25/11 bỏ sót bước này nên cảnh 3 không sinh cảnh báo mới.
 - [ ] LED và quạt đang **tắt**.
 - [ ] Giấy thấm nước hoa trong túi zip, để **xa mạch**.
 - [ ] Trình duyệt mở sẵn 3 tab: Tổng quan, Điều khiển, Cảnh báo (đã đăng nhập `operator_a`).
