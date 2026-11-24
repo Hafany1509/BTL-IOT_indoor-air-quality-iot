@@ -59,14 +59,22 @@ AO (hàng 43) ─ R1 10k (C43–C46) ─ R2 10k (D46–D49) ─●─ R3 10k (C4
 
 V(GPIO34) = V(AO) × 10k / 30k = **V(AO) / 3**. Với AO tối đa khoảng 5V, GPIO34 nhận khoảng 1,67V, dưới mức 3,3V của ESP32.
 
-### Relay và quạt (chưa đấu, chỉ đã xác định module)
+### Relay và quạt (đã lắp và test 24/11)
 
-- Module **CW-025**, relay **SONGLE SRD-05VDC-SL-C** (cuộn dây 5V, tiếp điểm 10A), có opto cách ly.
-- Cầu vít điều khiển: **DC+ / DC− / IN**. Cầu vít tiếp điểm: **NC / COM / NO**.
+- Module relay 1 kênh, relay **SONGLE SRD-05VDC-SL-C** (cuộn dây 5V, tiếp điểm 10A), có opto cách ly và jumper chọn kích H/L.
 - Jumper đặt ở **H** (kích mức cao), vì ESP32 xuất 3,3V. Firmware đặt `RELAY_ACTIVE_LOW 0` trong `secrets.h` cho khớp.
-- Dự kiến: DC+ → VIN, DC− → GND, IN → **GPIO26**. Quạt 5V 0,2A đóng/ngắt qua COM/NO.
-- Giắc 2 chân của quạt nhận vừa chặt đầu đực dây jumper, **không cần cắt dây**.
-- Còn chờ: tua vít để kẹp dây vào cầu vít.
+- Module đầu tiên (CW-025) điều khiển đúng, nhưng **vít COM bị siết kẹt** từ nhà máy, không mở được lỗ kẹp nên đã thay. Một module **SSR FC-80** (Omron G3MB-202P) cũng bị loại, vì đầu ra triac chỉ đóng/ngắt tải **AC**, không dùng được cho quạt DC 5V.
+
+| Relay | Nối tới |
+|---|---|
+| DC+ | VIN (5V, breadboard 170) |
+| DC− | GND (dãy VIN, breadboard 170) |
+| IN1 | **GPIO26** (D26) |
+| COM | VIN (5V) |
+| NO | Dây **đỏ (+)** quạt |
+| NC | Không dùng |
+
+Dây **đen (−)** của quạt nối GND ở dãy 3V3 trên MB-102 (cột F–H, cùng hàng chân GND). Giắc 2 chân của quạt nhận vừa chặt đầu đực dây jumper, **không cần cắt dây**. Relay chỉ đóng/ngắt tải DC 5V, **không đấu điện lưới 220V**.
 
 ## 3. Kết quả kiểm thử phần cứng
 
@@ -99,7 +107,7 @@ Môi trường: Mosquitto, MySQL, API, worker chạy bằng Docker Compose trên
 | Telemetry | Mỗi **10 giây** trên `home/room-a/esp32-a-01/telemetry`, `ts` ISO 8601 UTC | ✅ |
 | Hợp đồng dữ liệu backend | 6/6 mẫu thật qua `contracts.Telemetry`; worker lưu `VALID` vào MySQL | ✅ |
 | Heartbeat | `status online` mỗi **30 giây** (retained) | ✅ |
-| Lệnh từ web/API | `LED_SET ON` → ESP32 bật LED, ACK `result: OK` trong < 0,1 giây | ✅ Thiết bị đúng (backend có lỗi trạng thái, xem báo cáo lỗi) |
+| Lệnh từ web/API | `LED_SET ON` → ESP32 bật LED, ACK `result: OK` trong < 0,1 giây | ✅ Thiết bị đúng (ngày 22/11 backend còn lỗi trạng thái; đã sửa, xem mục 4.1) |
 | LWT khi mất kết nối | Rút USB → khoảng **45 giây** sau broker phát `{"state":"offline"}`, DB chuyển `OFFLINE` | ✅ (sau bản sửa `6f050a5`) |
 | Tự kết nối lại | Cắm lại USB → `online`, DB `OFFLINE → ACTIVE` | ✅ |
 | Bảo mật MQTT | Sai mật khẩu/ẩn danh/user lạ bị từ chối; ACL chặn publish/subscribe sai topic | ✅ 9/9 ca |
@@ -128,15 +136,28 @@ Backend `main` @ `03b3e12` (đã sửa lỗi ACK/TIMEOUT, hạ ngưỡng MQ-135:
 
 Cảnh báo giả #1 được operator đóng (`RESOLVED`) kèm ghi chú nguyên nhân.
 
+### 4.2. Relay và quạt (24/11/2026)
+
+Lệnh gửi qua REST API bằng tài khoản `operator_a` (cùng đường đi với nút Quạt trên web), ESP32 cấp nguồn từ cổng USB 3.x (SS) của máy tính.
+
+| Thời điểm (UTC) | Lệnh | Kết quả |
+|---|---|---|
+| 04:45:06 – 04:45:35 | `FAN_SET` ON, OFF, ON, OFF (chưa nối quạt) | Cả 4 lệnh **ACKED** với `fan_state` đúng; relay kêu "tách", đèn trạng thái sáng/tắt theo lệnh |
+| 04:56:54 | `FAN_SET ON` (đã nối quạt) | **ACKED**; **quạt quay** |
+| 04:57:30 | `FAN_SET OFF` | **ACKED**; **quạt dừng** |
+
+Trong khoảng 36 giây quạt chạy, broker chỉ ghi nhận 1 lần ESP32 kết nối (lúc cắm USB), và heartbeat cho thấy uptime tăng liên tục (35 s lúc 04:57:09, 65 s lúc 04:57:39), nên **ESP32 không bị khởi động lại vì sụt áp**.
+
 ## 5. Nguồn điện
 
-- Hiện tại toàn bộ (ESP32 + DHT22 + LED + MQ-135) lấy nguồn từ **cổng USB của PC**. MQ-135 lấy 5V từ chân VIN.
-- Ghi nhận **1 lần ESP32 tự khởi động lại** khoảng 35 giây sau khi nạp firmware. Sau đó chạy ổn định hơn 10 phút. Chưa xác định nguyên nhân: có thể do chạm cáp, hoặc sụt áp khi Wi-Fi phát cùng lúc với dây đốt MQ-135.
-- Khi thêm relay (khoảng 70 mA) và quạt (0,2 A), tổng dòng có thể tới khoảng 600–700 mA, vượt mức an toàn của cổng USB 2.0 (500 mA). Khi chạy đủ tải hoặc demo, dùng **sạc 5V ≥ 1A** (nhóm dùng sạc Xiaomi 5V/3A) cắm vào cổng USB của ESP32. Không cắt cáp sạc.
+- Mạch đầy đủ (ESP32 + DHT22 + LED + MQ-135 + relay + quạt) lấy 5V từ chân VIN, tức nguồn USB.
+- Ghi nhận **1 lần ESP32 tự khởi động lại** ngày 22/11, khoảng 35 giây sau khi nạp firmware (cổng USB thường, chưa có relay/quạt). Chưa xác định nguyên nhân.
+- Ngày 24/11, với **cổng USB 3.x (SS)** và quạt chạy khoảng 36 giây, **không** có lần khởi động lại nào. Ước tính tổng dòng khoảng 550–650 mA (đỉnh tới khoảng 800 mA), vượt chuẩn USB 2.0 (500 mA) nhưng nằm trong chuẩn USB 3.x (900 mA).
+- Khi demo, quạt có thể chạy lâu hơn, nên mang theo **sạc 5V ≥ 1A** (nhóm dùng sạc Xiaomi 5V/3A) làm nguồn dự phòng, cắm vào cổng USB của ESP32. Không cắt cáp sạc.
 
 ## 6. Việc còn lại
 
-- [ ] Đấu relay (DC+/DC−/IN) và quạt (COM/NO), test `FAN_SET` ON/OFF.
+- [x] Đấu relay và quạt, test `FAN_SET` ON/OFF *(24/11)*.
 - [ ] Đo điện áp AO và GPIO34 bằng đồng hồ vạn năng khi có, để bổ sung cho số đo của ESP32.
 - [ ] Burn-in MQ-135, ghi giá trị nền ổn định, chốt ngưỡng cảnh báo cùng backend.
 - [ ] Bổ sung ảnh mạch vào `hardware/evidence/`.

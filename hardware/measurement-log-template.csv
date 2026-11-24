@@ -6,3 +6,4 @@ date_time_local,firmware_commit,stage,condition,esp32_supply_v,mq135_supply_v,mq
 2026-11-22 (gio khong ghi),ec386b8,hwtest,MQ-135 + giay tham con 1-2cm,USB PC,VIN (khong do),chua do (khong co dong ho),~0.33 (uoc tinh tu raw),,,235,,,,,,serial log,gia tri cao nhat
 2026-11-22 22:28,a713b75 (main.cpp goc),main,MQTT end-to-end,USB PC,,,,24.5,73.6,0,yes,LED_SET ON,cmd-cd51d74ec430,OK,,docs/reports/bao-cao-loi-backend-2026-11-22.md,ACK <0.1s; backend ghi TIMEOUT (loi backend)
 2026-11-22 23:13,6f050a5,main,rut USB -> LWT,USB PC,,,,25.1,74.2,0,yes,,,,45,docs/reports/kiem-thu-bao-mat-mqtt-2026-11-22.md,LWT offline sau ~45s; cam lai -> ACTIVE
+2026-11-24 11:56,2f82ff5,main,quat 5V qua relay (jumper H),USB 3.x SS,,,,,,,yes,FAN_SET ON/OFF,,OK,,hardware/bring-up-results.md,quat quay ~36s roi dung; ESP32 khong reset

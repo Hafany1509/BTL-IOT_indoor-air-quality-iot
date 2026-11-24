@@ -75,7 +75,7 @@ Có thể làm bước 5–6 **trong lúc** nhóm trình bày phần trước, �
 
 **Kết quả:** LED trên mạch sáng; trên web lệnh chuyển **"Node đã phản hồi"** gần như ngay lập tức. Tắt lại bằng nút **Tắt**.
 
-**Khi đã có relay mới:** làm tương tự với **Quạt thông gió** → nghe relay kêu "tách", **quạt quay**; Tắt → quạt dừng.
+Làm tương tự với **Quạt thông gió** → nghe relay kêu "tách", **quạt quay**; Tắt → quạt dừng.
 
 **Nói:** mỗi lệnh có `command_id`. ESP32 trả ACK cùng `command_id`, backend chuyển trạng thái `SENT → ACKED`. Lịch sử lệnh lưu ai gửi, lúc nào.
 

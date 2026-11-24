@@ -36,9 +36,9 @@ Kiểm tra nhãn chân trên đúng module trước khi cấp nguồn. GPIO34 l�
 
 Firmware chưa có OTA và chưa nhận cấu hình ngưỡng cảnh báo; ngưỡng vẫn do backend quản lý. Nếu mất NTP, firmware tạm bỏ qua telemetry để không gửi timestamp giả.
 
-## Đã kiểm chứng (22/11/2026)
+## Đã kiểm chứng (22–24/11/2026)
 
-Đã biên dịch và chạy trên ESP32 thật: telemetry, heartbeat, `LED_SET` kèm ACK, LWT offline và tự kết nối lại đều hoạt động. Chưa test `FAN_SET` với relay thật. Kết quả chi tiết: [hardware/bring-up-results.md](../hardware/bring-up-results.md).
+Đã biên dịch và chạy trên ESP32 thật: telemetry, heartbeat, `LED_SET` và `FAN_SET` (relay + quạt 5V) kèm ACK, LWT offline, tự kết nối lại và giữ telemetry trong 120 giây làm nóng MQ-135 đều hoạt động. Kết quả chi tiết: [hardware/bring-up-results.md](../hardware/bring-up-results.md).
 
 Sketch kiểm tra phần cứng không cần Wi-Fi/MQTT (nháy LED, đọc DHT22 và MQ-135):
 

@@ -16,8 +16,8 @@ Mục đích: kiểm tra tuần tự, mỗi lần chỉ thêm một phần mạc
 - [x] Nối DHT22: kiểm tra số đo nhiệt độ/độ ẩm hợp lệ trước khi thêm cảm biến khác. *(22/11, 0 lỗi)*
 - [x] Nối MQ-135 AO qua mạch bảo vệ vào GPIO34 (ADC1); xác nhận ADC thay đổi khi điều kiện khí thay đổi, không đổi thành ppm. *(22/11, cồn: 0 → 235)*
 - [x] Nối LED qua điện trở 220Ω vào GPIO25; thử bật/tắt bằng lệnh MQTT. *(22/11, LED_SET ON + ACK)*
-- [ ] Thử relay không tải và xác nhận active-low/active-high; cập nhật RELAY_ACTIVE_LOW trong secrets.h nếu cần.
-- [ ] Chỉ sau khi relay hoạt động đúng mới nối quạt DC 5V qua COM/NO. Không đấu điện lưới 220V.
+- [x] Thử relay không tải và xác nhận active-low/active-high; cập nhật RELAY_ACTIVE_LOW trong secrets.h nếu cần. *(24/11, jumper H, `RELAY_ACTIVE_LOW 0`)*
+- [x] Chỉ sau khi relay hoạt động đúng mới nối quạt DC 5V qua COM/NO. Không đấu điện lưới 220V. *(24/11)*
 
 ## 3. Kiểm tra kết nối đầu cuối
 
@@ -25,7 +25,7 @@ Mục đích: kiểm tra tuần tự, mỗi lần chỉ thêm một phần mạc
 - [x] Xác nhận broker chấp nhận credential đúng và ACL từ chối topic của node khác. *(9/9 ca)*
 - [x] Quan sát telemetry trên topic home/room-a/esp32-a-01/telemetry và đối chiếu JSON với docs/mqtt.md.
 - [x] Xác nhận status online/LWT offline và tự kết nối lại sau khi Wi-Fi/broker phục hồi. *(22/11, kiểm bằng rút/cắm nguồn ESP32; chưa thử tắt broker)*
-- [ ] Gửi FAN_SET và LED_SET; xác nhận trạng thái phần cứng và ACK có cùng command_id.
+- [x] Gửi FAN_SET và LED_SET; xác nhận trạng thái phần cứng và ACK có cùng command_id. *(24/11, quạt quay/dừng, LED bật, ACKED)*
 - [ ] Chạy ít nhất 10 phút, lưu log Serial, log worker và ảnh prototype vào thư mục hardware/ hoặc docs/.
 
 ## Bằng chứng cần lưu
