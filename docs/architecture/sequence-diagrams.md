@@ -4,6 +4,7 @@ Tài liệu này đặc tả sơ đồ tuần tự cho 2 quy trình vận hành 
 1. **Quy trình 1 (D10)**: Thu thập dữ liệu cảm biến, lưu trữ chuỗi thời gian và kích hoạt cảnh báo ngưỡng (Telemetry & Alerting Flow).
 2. **Quy trình 2 (D11)**: Gửi lệnh điều khiển hai chiều, nhận phản hồi ACK và giám sát Timeout (Command & ACK Flow).
 
+
 ---
 
 ## 1. Quy Trình 1: Thu Thập Telemetry & Kích Hoạt Cảnh Báo (D10)
@@ -62,8 +63,9 @@ sequenceDiagram
     else Hợp lệ
         API->>API: Sinh command_id duy nhất (UUID)
         API->>DB: Lưu lệnh (status = 'PENDING', timeout_at = now + 15s)
-        API->>Broker: Publish QoS 1 (home/room-a/esp32-a-01/command)
-        API->>DB: Cập nhật lệnh (status = 'SENT', sent_at = now)
+        API->>Broker: Publish QoS 1 + loop_start() – chờ PUBACK broker xác nhận
+        API->>DB: Cập nhật lệnh (status = 'SENT', sent_at = now) – chỉ khi vẫn PENDING
+        Note over API,DB: Nếu worker đã ghi ACKED trước khi API cập nhật,<br/>UPDATE có điều kiện WHERE status='PENDING' sẽ không ghi đè
         API-->>Operator: 201 Created (Trả về command_id & trạng thái SENT)
     end
 

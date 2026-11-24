@@ -2,8 +2,9 @@
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.audit import record_audit
@@ -67,12 +68,23 @@ def send_command(
 
     # Publish to MQTT topic home/{room_id}/{device_id}/command
     sent = dispatch_device_command(device.room_id, device_id, full_payload)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     if sent:
-        command_record.status = CommandStatus.SENT
-        command_record.sent_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        # Chỉ chuyển sang SENT nếu lệnh vẫn còn PENDING, tránh ghi đè ACKED mà worker đã lưu
+        db.execute(
+            update(Command)
+            .where(Command.id == command_record.id, Command.status == CommandStatus.PENDING)
+            .values(status=CommandStatus.SENT, sent_at=now)
+        )
     else:
-        command_record.status = CommandStatus.FAILED
-        command_record.error_message = "Failed to publish message to MQTT broker"
+        db.execute(
+            update(Command)
+            .where(Command.id == command_record.id, Command.status == CommandStatus.PENDING)
+            .values(
+                status=CommandStatus.FAILED,
+                error_message="Failed to publish message to MQTT broker",
+            )
+        )
 
     db.commit()
     db.refresh(command_record)

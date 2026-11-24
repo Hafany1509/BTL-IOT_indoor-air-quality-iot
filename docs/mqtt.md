@@ -2,6 +2,7 @@
 
 Tài liệu này đặc tả toàn diện kiến trúc trao đổi thông điệp qua giao thức MQTT trong hệ thống: bao gồm cây chủ đề (Topic tree), cấu trúc dữ liệu (Payload schema), mức dịch vụ chuyển giao (QoS), chính sách lưu giữ tin (Retain/LWT), ma trận kiểm soát truy cập (Broker ACL), và cơ chế chống trùng lặp dữ liệu (Deduplication).
 
+
 ---
 
 ## 1. Cấu trúc Cây Chủ đề (Topic Tree)
@@ -45,7 +46,7 @@ Gửi định kỳ theo chu kỳ (mặc định 10 giây).
   "ts": "2026-11-07T14:30:00Z",
   "temperature_c": 28.5,
   "humidity_pct": 62.4,
-  "mq135_adc_raw": 580
+  "mq135_adc_raw": 12
 }
 ```
 

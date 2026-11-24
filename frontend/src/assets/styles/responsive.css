@@ -1,0 +1,24 @@
+@media (max-width: 1199px) {
+  .desktop-sidebar { display: none; }
+  .app-body { margin: 0; }
+  .topbar .drawer-toggle, .sidebar .drawer-close { display: inline-flex; }
+  .drawer { margin: 0; padding: 0; border: 0; border-radius: 0; height: 100dvh; max-height: 100dvh; width: min(280px, 85vw); }
+  .grid.three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1200px) {
+  .drawer { display: none; }
+}
+@media (max-width: 767px) {
+  .page { padding: 20px 16px 32px; }
+  .topbar { padding: 0 12px; }
+  .topbar-actions { gap: 6px; }
+  .user-name, .header-node { display: none; }
+  .grid.three, .grid.two, .grid.dashboard { grid-template-columns: minmax(0, 1fr); }
+  .card { padding: 15px; }
+  .page-heading { margin-bottom: 16px; }
+  .node-meta { border: 0; padding-left: 0; }
+  .auth-layout { grid-template-columns: 1fr; }
+  .auth-art { display: none; }
+  .login-panel { padding: 24px; }
+  .chart-area { height: 230px; }
+}

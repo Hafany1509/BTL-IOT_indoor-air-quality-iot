@@ -11,6 +11,7 @@ Thư mục `backend/` chứa toàn bộ mã nguồn tầng ứng dụng (Applica
 * **Python**: Phiên bản `>= 3.12` (Khuyến nghị 3.12 hoặc 3.13).
 * **MySQL**: Phiên bản 8.0 hoặc 8.4 LTS (InnoDB, `utf8mb4`).
 * **Mosquitto MQTT Broker**: Phiên bản 2.0+ (đã kích hoạt xác thực và file phân quyền ACL).
+* 
 
 ---
 
@@ -134,3 +135,6 @@ Các ca kiểm thử trong `test_backend.py` xác minh:
 * Phân quyền phạm vi Operator chỉ xem thiết bị được gán, chặn lỗ hổng IDOR (T10).
 * Chặn quyền điều khiển đối với vai trò `VIEWER` trả về lỗi `403 Forbidden` (T09).
 * Cho phép Operator gửi lệnh tới thiết bị được giao và lưu vết trạng thái `SENT` (T08).
+* Lệnh chuyển trạng thái `ACKED` sau khi nhận phản hồi từ ESP32 mà không bị race condition ghi đè (T08).
+* Watchdog chỉ chuyển lệnh sang `TIMEOUT` khi vẫn ở trạng thái `SENT`; lệnh đã `ACKED` được bảo toàn (T13).
+* Hash mật khẩu trong `seed_demo.sql` phải vượt qua `bcrypt.checkpw("Demo@2026!", hash)` (T01, T02).
